@@ -99,6 +99,7 @@ dist/
 .turbo/
 .env
 *.log
+.worktrees/
 ```
 
 `package.json`:
