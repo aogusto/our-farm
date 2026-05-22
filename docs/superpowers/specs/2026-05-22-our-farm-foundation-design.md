@@ -253,6 +253,7 @@ token também é passado nas opções de `join` da Room (ver §6).
 - Phaser desenha grid + culturas (por estágio) + mãozinhas ao vivo
 - Loop plantar → crescer (derivado) → colher: validado, persistido, sincronizado
 - 2 tipos de cultura (uma rápida, uma lenta) para exercitar o catálogo
+- Tooling do Claude Code: `CLAUDE.md` + `.claude/settings.json` (ver §13)
 
 ### Fica de fora (YAGNI — specs futuros)
 
@@ -261,6 +262,8 @@ token também é passado nas opções de `join` da Room (ver §6).
 - Inventário, moedas, economia, dia/noite, som, arte caprichada
 - Deploy no Railway
 - Driver Redis de escala do Colyseus (um processo só basta no dev local)
+- Agents customizados do Claude Code (criados em spec futuro, quando houver
+  código e padrões reais para contextualizá-los)
 
 ## 12. Riscos e questões em aberto
 
@@ -270,3 +273,36 @@ token também é passado nas opções de `join` da Room (ver §6).
   validar → persistir → mutar estado (§7). Postgres é a fonte de verdade.
 - **Valores de balanceamento** (durações de crescimento, tamanho do grid) são
   provisórios e ajustáveis; não bloqueiam a fundação.
+
+## 13. Tooling do Claude Code (`.claude/`)
+
+A fundação inclui o tooling do Claude Code, em versão enxuta — só o que rende
+desde o dia 1.
+
+### `CLAUDE.md` (raiz do repo)
+
+Escrito como **última etapa do scaffold**, depois que a estrutura real existe —
+assim documenta o que de fato está no disco, não uma estrutura imaginada.
+Conteúdo:
+
+- Visão geral do projeto e do layout do monorepo
+- Comandos essenciais: `pnpm dev`, testes, `db:migrate`, `db:seed`, Docker
+- Convenções de código: TypeScript `strict`; regra de jogo mora em
+  `packages/shared`; servidor fino (valida + persiste + sincroniza); cliente
+  fino (renderiza + envia intenção)
+- Onde ficam schema/migrations (Drizzle em `apps/server`) e como rodá-las
+
+### `.claude/settings.json`
+
+Allowlist de permissões para os comandos recorrentes do projeto, evitando
+prompts repetidos: `pnpm`, `turbo`, `docker compose`, `vitest`, `drizzle-kit`.
+Sem hooks no Marco 1.
+
+### Agents customizados — adiados
+
+Decisão consciente: **nenhum agent customizado no Marco 1**. Um agent rende
+quando encoda contexto específico e uma tarefa repetida; num projeto greenfield
+ainda não há código nem padrões para isso. Arquitetar/implementar/testar/revisar
+o primeiro build é coberto pelas skills do superpowers
+(`writing-plans` → `executing-plans` → TDD → `requesting-code-review`). Agents
+do projeto entram em spec futuro, quando os padrões reais existirem.
