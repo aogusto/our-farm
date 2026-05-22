@@ -1,0 +1,21 @@
+{
+  "name": "our-farm",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.29.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @our-farm/server db:generate",
+    "db:migrate": "pnpm --filter @our-farm/server db:migrate",
+    "db:seed": "pnpm --filter @our-farm/server db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.14",
+    "typescript": "^6.0.3"
+  }
+}
