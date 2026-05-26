@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { ColyseusTestServer, boot } from "@colyseus/testing";
 import appConfig from "../app.config";
-import { queryClient } from "../db/client";
 import { resetDb, seedSharedFarm, makeUser } from "../test/db-helpers";
 import { getFarmCrops, insertCrop } from "../db/repository";
 import { CROP_CATALOG } from "@our-farm/shared";
@@ -118,7 +117,7 @@ describe("FarmRoom — harvest", () => {
   let colyseus: ColyseusTestServer;
 
   beforeAll(async () => { colyseus = await boot(appConfig); });
-  afterAll(async () => { await colyseus.shutdown(); await queryClient.end(); });
+  afterAll(async () => { await colyseus.shutdown(); });
   beforeEach(async () => { await colyseus.cleanup(); await resetDb(); });
 
   it("colhe uma cultura pronta e remove do banco", async () => {
