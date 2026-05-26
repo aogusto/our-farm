@@ -14,15 +14,27 @@ ao vivo + loop plantar → crescer → colher.
 
 ## Primeiro setup (clone novo)
 
+Atalho via Makefile:
+
 ```bash
-nvm use 20              # ou nvm install 20 se ainda não tiver
-pnpm install            # instala todas as workspaces
-cp .env.example .env    # DATABASE_URL + PORT (gitignored)
-docker compose up -d    # sobe o Postgres 16 local
-pnpm db:migrate         # aplica o schema no banco
-pnpm db:seed            # cria a fazenda compartilhada (idempotente)
-pnpm dev                # web em :5173, server em :2567
+nvm use 20      # ou nvm install 20 se ainda não tiver
+make setup      # install + .env + docker + migrate + seed
+make dev        # web :5173 + server :2567
 ```
+
+Equivalente em comandos diretos:
+
+```bash
+nvm use 20
+pnpm install
+cp .env.example .env
+docker compose up -d
+pnpm db:migrate
+pnpm db:seed
+pnpm dev
+```
+
+`make help` lista todos os targets (`test`, `typecheck`, `db-reset`, etc.).
 
 ## Comandos
 
