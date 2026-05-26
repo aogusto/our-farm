@@ -65,8 +65,8 @@ export class FarmScene extends Phaser.Scene {
     // Camadas (ordem z ascendente)
     this.bgLayer = this.add.container(0, 0);
     this.decorationsLayer = this.add.container(0, 0);
-    this.fenceLayer = this.add.container(0, 0);
     this.dirtLayer = this.add.container(0, 0);
+    this.fenceLayer = this.add.container(0, 0);
     this.cropsLayer = this.add.container(0, 0);
     this.cursorsLayer = this.add.container(0, 0);
     this.arrowsLayer = this.add.container(0, 0);
@@ -211,6 +211,11 @@ export class FarmScene extends Phaser.Scene {
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.pan.isPanning()) return;  // o pan já consumiu este down
+    // Defensiva: o pan handler (setupCameraPan) está registrado antes deste,
+    // então ele já flippou isPanning quando middle ou space+left dispara.
+    // Mas se a ordem de registro mudar no futuro, ou o pan handler perder
+    // o evento, ainda evitamos plantar no início de um pan.
+    if (pointer.middleButtonDown()) return;
     if (!pointer.leftButtonDown()) return;
 
     const tx = Math.floor(pointer.worldX / TILE);
