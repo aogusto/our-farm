@@ -1,7 +1,8 @@
 import { Room, type Client } from "colyseus";
-import type { User, CursorMessage } from "@our-farm/shared";
+import type { User, CursorMessage, PlantMessage } from "@our-farm/shared";
+import { validatePlant } from "@our-farm/shared";
 import { FarmState, Cursor, CropState, tileKey } from "./schema";
-import { getSharedFarm, getFarmCrops, getUserByToken } from "../db/repository";
+import { getSharedFarm, getFarmCrops, getUserByToken, insertCrop } from "../db/repository";
 
 export class FarmRoom extends Room<{ state: FarmState }> {
   async onCreate(): Promise<void> {
@@ -25,6 +26,10 @@ export class FarmRoom extends Room<{ state: FarmState }> {
 
     this.onMessage("cursor", (client, message: CursorMessage) => {
       this.handleCursor(client, message);
+    });
+
+    this.onMessage("plant", (client, message: PlantMessage) => {
+      void this.handlePlant(client, message);
     });
   }
 
@@ -53,5 +58,36 @@ export class FarmRoom extends Room<{ state: FarmState }> {
     if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
     cursor.x = message.x;
     cursor.y = message.y;
+  }
+
+  private async handlePlant(client: Client, message: PlantMessage): Promise<void> {
+    const user = client.auth as User | undefined;
+    if (!user) return;
+    if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
+
+    const result = validatePlant({
+      x: message.x,
+      y: message.y,
+      cropType: message.cropType,
+      occupied: this.state.crops.has(tileKey(message.x, message.y)),
+      gridWidth: this.state.gridWidth,
+      gridHeight: this.state.gridHeight,
+    });
+    if (!result.ok) return;
+
+    // Persiste primeiro; só reflete no estado da Room se o banco confirmar.
+    const crop = await insertCrop({
+      farmId: this.state.farmId,
+      x: message.x,
+      y: message.y,
+      cropType: result.cropType,
+      plantedBy: user.id,
+    });
+
+    const cropState = new CropState();
+    cropState.cropType = crop.cropType;
+    cropState.plantedAt = crop.plantedAt;
+    cropState.plantedBy = crop.plantedBy;
+    this.state.crops.set(tileKey(message.x, message.y), cropState);
   }
 }
