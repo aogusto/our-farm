@@ -40,3 +40,10 @@ export interface Crop {
 export interface CursorMessage { x: number; y: number; }
 export interface PlantMessage { x: number; y: number; cropType: CropType; }
 export interface HarvestMessage { x: number; y: number; }
+
+export interface Plot {
+  farmId: string;
+  x: number;
+  y: number;
+  unlockedAt: number; // epoch ms
+}
