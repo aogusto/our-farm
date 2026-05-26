@@ -15,5 +15,5 @@ export const CROP_CATALOG: Record<CropType, CropDefinition> = {
 export const CROP_TYPES = Object.keys(CROP_CATALOG) as CropType[];
 
 export function isCropType(value: unknown): value is CropType {
-  return typeof value === "string" && value in CROP_CATALOG;
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(CROP_CATALOG, value);
 }
