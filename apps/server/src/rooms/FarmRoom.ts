@@ -3,7 +3,7 @@ import type { User, CursorMessage } from "@our-farm/shared";
 import { FarmState, Cursor, CropState, tileKey } from "./schema";
 import { getSharedFarm, getFarmCrops, getUserByToken } from "../db/repository";
 
-export class FarmRoom extends Room<FarmState> {
+export class FarmRoom extends Room<{ state: FarmState }> {
   async onCreate(): Promise<void> {
     const farm = await getSharedFarm();
     if (!farm) throw new Error("fazenda compartilhada não foi semeada (rode pnpm db:seed)");
