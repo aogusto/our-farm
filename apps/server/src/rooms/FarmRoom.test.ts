@@ -69,10 +69,10 @@ describe("FarmRoom — plant", () => {
     const user = await makeUser();
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
-    client.send("plant", { x: 3, y: 5, cropType: "carrot" });
+    client.send("plant", { x: 12, y: 13, cropType: "carrot" });
     await room.waitForNextPatch();
 
-    expect(room.state.crops.get("3,5")?.cropType).toBe("carrot");
+    expect(room.state.crops.get("12,13")?.cropType).toBe("carrot");
     expect(await getFarmCrops(farm.id)).toHaveLength(1);
   });
 
@@ -81,13 +81,13 @@ describe("FarmRoom — plant", () => {
     const user = await makeUser();
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
-    client.send("plant", { x: 1, y: 1, cropType: "carrot" });
+    client.send("plant", { x: 11, y: 11, cropType: "carrot" });
     await room.waitForNextPatch();
-    client.send("plant", { x: 1, y: 1, cropType: "corn" });
+    client.send("plant", { x: 11, y: 11, cropType: "corn" });
     await room.waitForNextPatch();
 
     expect(room.state.crops.size).toBe(1);
-    expect(room.state.crops.get("1,1")?.cropType).toBe("carrot");
+    expect(room.state.crops.get("11,11")?.cropType).toBe("carrot");
   });
 
   it("rejeita plantar fora do grid", async () => {
@@ -106,7 +106,19 @@ describe("FarmRoom — plant", () => {
     const user = await makeUser();
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
-    client.send("plant", { x: 2, y: 2, cropType: "banana" });
+    client.send("plant", { x: 12, y: 12, cropType: "banana" });
+    await room.waitForNextPatch();
+
+    expect(room.state.crops.size).toBe(0);
+  });
+
+  it("rejeita plantar em tile não desbloqueado", async () => {
+    await seedSharedFarm();
+    const user = await makeUser();
+    const room = await colyseus.createRoom("farm", {});
+    const client = await colyseus.connectTo(room, { token: user.token });
+    // (20,20) é dentro do grid 50×40 mas fora do starter pack (10..15)
+    client.send("plant", { x: 20, y: 20, cropType: "carrot" });
     await room.waitForNextPatch();
 
     expect(room.state.crops.size).toBe(0);
@@ -125,15 +137,15 @@ describe("FarmRoom — harvest", () => {
     const user = await makeUser();
     // cultura plantada bem no passado → já pronta
     await insertCrop({
-      farmId: farm.id, x: 2, y: 2, cropType: "carrot", plantedBy: user.id,
+      farmId: farm.id, x: 12, y: 12, cropType: "carrot", plantedBy: user.id,
       plantedAt: Date.now() - CROP_CATALOG.carrot.growthMs - 5000,
     });
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
-    client.send("harvest", { x: 2, y: 2 });
+    client.send("harvest", { x: 12, y: 12 });
     await room.waitForNextPatch();
 
-    expect(room.state.crops.has("2,2")).toBe(false);
+    expect(room.state.crops.has("12,12")).toBe(false);
     expect(await getFarmCrops(farm.id)).toHaveLength(0);
   });
 
@@ -141,15 +153,15 @@ describe("FarmRoom — harvest", () => {
     const farm = await seedSharedFarm();
     const user = await makeUser();
     await insertCrop({
-      farmId: farm.id, x: 4, y: 4, cropType: "corn", plantedBy: user.id,
+      farmId: farm.id, x: 14, y: 14, cropType: "corn", plantedBy: user.id,
       plantedAt: Date.now(), // recém-plantada
     });
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
-    client.send("harvest", { x: 4, y: 4 });
+    client.send("harvest", { x: 14, y: 14 });
     await room.waitForNextPatch();
 
-    expect(room.state.crops.has("4,4")).toBe(true);
+    expect(room.state.crops.has("14,14")).toBe(true);
     expect(await getFarmCrops(farm.id)).toHaveLength(1);
   });
 
@@ -158,7 +170,7 @@ describe("FarmRoom — harvest", () => {
     const user = await makeUser();
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
-    client.send("harvest", { x: 7, y: 7 });
+    client.send("harvest", { x: 15, y: 15 });
     await room.waitForNextPatch();
 
     expect(room.state.crops.size).toBe(0);

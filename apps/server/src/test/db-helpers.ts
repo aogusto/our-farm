@@ -1,26 +1,30 @@
 import { db } from "../db/client";
-import { crops, farms, users } from "../db/schema";
-import { createUser } from "../db/repository";
+import { crops, farms, users, farmPlots } from "../db/schema";
+import { createUser, insertPlot } from "../db/repository";
 import type { Farm, HandStyle, User } from "@our-farm/shared";
 
-/** Limpa as três tabelas — chamado antes de cada teste. */
+/** Limpa as quatro tabelas — chamado antes de cada teste. */
 export async function resetDb(): Promise<void> {
   await db.delete(crops);
+  await db.delete(farmPlots);
   await db.delete(farms);
   await db.delete(users);
 }
 
-/** Cria uma fazenda compartilhada de teste. */
+const STARTER_OFFSET = 10;
+const STARTER_SIZE = 6;
+
+/** Cria uma fazenda compartilhada de teste e desbloqueia o starter pack 6×6. */
 export async function seedSharedFarm(): Promise<Farm> {
   const [row] = await db.insert(farms).values({
     name: "Fazenda de Teste",
     ownerId: null,
     type: "shared",
-    gridWidth: 16,
-    gridHeight: 16,
+    gridWidth: 50,
+    gridHeight: 40,
   }).returning();
   if (!row) throw new Error("seedSharedFarm: insert returned no row");
-  return {
+  const farm: Farm = {
     id: row.id,
     name: row.name,
     ownerId: row.ownerId,
@@ -28,6 +32,12 @@ export async function seedSharedFarm(): Promise<Farm> {
     gridWidth: row.gridWidth,
     gridHeight: row.gridHeight,
   };
+  for (let dy = 0; dy < STARTER_SIZE; dy++) {
+    for (let dx = 0; dx < STARTER_SIZE; dx++) {
+      await insertPlot({ farmId: farm.id, x: STARTER_OFFSET + dx, y: STARTER_OFFSET + dy });
+    }
+  }
+  return farm;
 }
 
 export async function makeUser(nickname = "Tester"): Promise<User> {
