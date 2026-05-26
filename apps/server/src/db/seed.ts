@@ -2,9 +2,7 @@ import "../env";
 import { db, queryClient } from "./client";
 import { getSharedFarm, insertPlot } from "./repository";
 import { farms } from "./schema";
-
-const STARTER_OFFSET = 10;
-const STARTER_SIZE = 6;
+import { STARTER_OFFSET, STARTER_SIZE } from "./starter-pack";
 
 try {
   let farm = await getSharedFarm();

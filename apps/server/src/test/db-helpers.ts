@@ -1,6 +1,7 @@
 import { db } from "../db/client";
 import { crops, farms, users, farmPlots } from "../db/schema";
 import { createUser, insertPlot } from "../db/repository";
+import { STARTER_OFFSET, STARTER_SIZE } from "../db/starter-pack";
 import type { Farm, HandStyle, User } from "@our-farm/shared";
 
 /** Limpa as quatro tabelas — chamado antes de cada teste. */
@@ -10,9 +11,6 @@ export async function resetDb(): Promise<void> {
   await db.delete(farms);
   await db.delete(users);
 }
-
-const STARTER_OFFSET = 10;
-const STARTER_SIZE = 6;
 
 /** Cria uma fazenda compartilhada de teste e desbloqueia o starter pack 6×6. */
 export async function seedSharedFarm(): Promise<Farm> {
