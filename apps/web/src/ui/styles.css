@@ -47,3 +47,15 @@ body {
   cursor: pointer;
 }
 .overlay__error { color: #ff9a8a; font-size: 12px; min-height: 14px; }
+#app { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+#hud { display: flex; gap: 8px; }
+.hud__crop {
+  padding: 8px 14px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: #3c4a26;
+  color: #f4f4e8;
+  cursor: pointer;
+  font-size: 13px;
+}
+.hud__crop--active { border-color: #ffcc00; }
