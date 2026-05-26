@@ -9,3 +9,41 @@ body {
   padding: 24px;
 }
 #game canvas { display: block; border-radius: 8px; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 26, 12, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.overlay__card {
+  background: #3c4a26;
+  padding: 28px 32px;
+  border-radius: 12px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.overlay__card h1 { margin: 0; font-size: 20px; }
+.overlay__card label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.overlay__card input, .overlay__card select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #6b7a48;
+  background: #2f3a1f;
+  color: #f4f4e8;
+}
+.overlay__card button {
+  margin-top: 6px;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #ffcc00;
+  color: #2f3a1f;
+  font-weight: 700;
+  cursor: pointer;
+}
+.overlay__error { color: #ff9a8a; font-size: 12px; min-height: 14px; }
