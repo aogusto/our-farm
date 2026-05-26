@@ -13,10 +13,13 @@ describe("validatePlant", () => {
   it("rejeita coordenadas fora do grid", () => {
     expect(validatePlant({ x: 16, y: 0, cropType: "carrot", occupied: false, ...GRID }).ok).toBe(false);
     expect(validatePlant({ x: -1, y: 0, cropType: "carrot", occupied: false, ...GRID }).ok).toBe(false);
+    expect(validatePlant({ x: 0, y: 16, cropType: "carrot", occupied: false, ...GRID }).ok).toBe(false);
+    expect(validatePlant({ x: 0, y: -1, cropType: "carrot", occupied: false, ...GRID }).ok).toBe(false);
   });
 
   it("rejeita coordenadas não-inteiras", () => {
     expect(validatePlant({ x: 1.5, y: 0, cropType: "carrot", occupied: false, ...GRID }).ok).toBe(false);
+    expect(validatePlant({ x: 0, y: 1.5, cropType: "carrot", occupied: false, ...GRID }).ok).toBe(false);
   });
 
   it("rejeita terra já ocupada", () => {
