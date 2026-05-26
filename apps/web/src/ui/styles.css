@@ -8,7 +8,7 @@ body {
   justify-content: center;
   padding: 24px;
 }
-#game canvas { display: block; border-radius: 8px; }
+#game canvas { display: block; border-radius: 8px; cursor: none; }
 
 .overlay {
   position: fixed;

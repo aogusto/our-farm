@@ -27,6 +27,7 @@ export class FarmScene extends Phaser.Scene {
   private cursorSprites = new Map<string, Phaser.GameObjects.Container>();
   private cropSprites = new Map<string, Phaser.GameObjects.Arc>();
   private lastCursorSent = 0;
+  private hasLocalPointer = false;
 
   constructor() {
     super("farm");
@@ -69,6 +70,7 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
+    this.hasLocalPointer = true;
     const now = this.time.now;
     if (now - this.lastCursorSent < CURSOR_THROTTLE_MS) return;
     this.lastCursorSent = now;
@@ -95,14 +97,26 @@ export class FarmScene extends Phaser.Scene {
   private syncCursors(): void {
     const seen = new Set<string>();
     this.room.state.cursors.forEach((cursor, sessionId) => {
-      if (sessionId === this.room.sessionId) return;
       seen.add(sessionId);
+      const isOwn = sessionId === this.room.sessionId;
+      // O cursor próprio só aparece depois do primeiro pointer move (evita
+      // renderizar a mão em (0,0) antes do usuário interagir).
+      if (isOwn && !this.hasLocalPointer) return;
+
       let sprite = this.cursorSprites.get(sessionId);
       if (!sprite) {
-        sprite = this.createCursorSprite(cursor.handColor, cursor.nickname);
+        // A própria mão não exibe label (você não precisa do seu próprio nome).
+        sprite = this.createCursorSprite(cursor.handColor, isOwn ? "" : cursor.nickname);
         this.cursorSprites.set(sessionId, sprite);
       }
-      sprite.setPosition(cursor.x, cursor.y);
+
+      if (isOwn) {
+        // Posição da própria mão vem do ponteiro local — sem round-trip, sem lag.
+        const p = this.input.activePointer;
+        sprite.setPosition(Math.round(p.worldX), Math.round(p.worldY));
+      } else {
+        sprite.setPosition(cursor.x, cursor.y);
+      }
     });
     for (const [sessionId, sprite] of this.cursorSprites) {
       if (!seen.has(sessionId)) {
