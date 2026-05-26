@@ -22,7 +22,7 @@ async function main(): Promise<void> {
     backgroundColor: "#2f3a1f",
   });
 
-  game.scene.add("farm", FarmScene, true, { room, hud, cols, rows } satisfies FarmSceneData);
+  game.scene.add("farm", FarmScene, true, { room, hud } satisfies FarmSceneData);
 }
 
 void main();
