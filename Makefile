@@ -3,13 +3,11 @@ SHELL := /bin/bash
 .SHELLFLAGS := -ec
 
 # Cada recipe roda num shell novo, então sourcear o nvm em cada uma garante Node 20
-# mesmo quando o shell padrão da máquina aponta para outra versão. Usamos
-# `corepack pnpm` em vez de `pnpm` direto: o Node 20 inclui corepack, que lê o
-# campo `packageManager` do package.json e resolve a versão correta do pnpm —
-# isso funciona mesmo quando o pnpm global foi instalado sob outra versão do
-# Node (por exemplo via Corepack do Node 24) e some do PATH após `nvm use 20`.
-NVM := export NVM_DIR="$$HOME/.nvm" && . "$$NVM_DIR/nvm.sh" && nvm use 20 >/dev/null && export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-PNPM := corepack pnpm
+# mesmo quando o shell padrão da máquina aponta para outra versão. `corepack
+# enable pnpm` instala o shim pnpm no bin do Node 20 (idempotente) — turbo e
+# outras ferramentas precisam de `pnpm` direto no PATH, não via `corepack pnpm`.
+NVM := export NVM_DIR="$$HOME/.nvm" && . "$$NVM_DIR/nvm.sh" && nvm use 20 >/dev/null && export COREPACK_ENABLE_DOWNLOAD_PROMPT=0 && corepack enable pnpm
+PNPM := pnpm
 
 .PHONY: help setup dev test typecheck \
         db-up db-down db-migrate db-seed db-generate db-reset \
