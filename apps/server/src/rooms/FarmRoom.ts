@@ -29,7 +29,9 @@ export class FarmRoom extends Room<{ state: FarmState }> {
     });
 
     this.onMessage("plant", (client, message: PlantMessage) => {
-      void this.handlePlant(client, message);
+      this.handlePlant(client, message).catch((err) => {
+        console.error("[FarmRoom] handlePlant error", err);
+      });
     });
   }
 
@@ -65,11 +67,12 @@ export class FarmRoom extends Room<{ state: FarmState }> {
     if (!user) return;
     if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
 
+    const key = tileKey(message.x, message.y);
     const result = validatePlant({
       x: message.x,
       y: message.y,
       cropType: message.cropType,
-      occupied: this.state.crops.has(tileKey(message.x, message.y)),
+      occupied: this.state.crops.has(key),
       gridWidth: this.state.gridWidth,
       gridHeight: this.state.gridHeight,
     });
@@ -84,10 +87,16 @@ export class FarmRoom extends Room<{ state: FarmState }> {
       plantedBy: user.id,
     });
 
+    // Re-check após o await: outro plant pode ter chegado na mesma tile enquanto
+    // este estava aguardando a persistência. Se isso aconteceu, abandona — o
+    // estado já tem o vencedor da corrida, e a constraint UNIQUE manteve o banco
+    // consistente (o outro insert teria falhado).
+    if (this.state.crops.has(key)) return;
+
     const cropState = new CropState();
     cropState.cropType = crop.cropType;
     cropState.plantedAt = crop.plantedAt;
     cropState.plantedBy = crop.plantedBy;
-    this.state.crops.set(tileKey(message.x, message.y), cropState);
+    this.state.crops.set(key, cropState);
   }
 }
