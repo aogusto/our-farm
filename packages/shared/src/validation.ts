@@ -7,6 +7,7 @@ export interface PlantInput {
   y: number;
   cropType: string;
   occupied: boolean;
+  unlocked: boolean;
   gridWidth: number;
   gridHeight: number;
 }
@@ -21,6 +22,9 @@ export function validatePlant(input: PlantInput): PlantValidation {
   }
   if (input.x < 0 || input.x >= input.gridWidth || input.y < 0 || input.y >= input.gridHeight) {
     return { ok: false, reason: "fora do grid" };
+  }
+  if (!input.unlocked) {
+    return { ok: false, reason: "lote não desbloqueado" };
   }
   if (input.occupied) {
     return { ok: false, reason: "terra ocupada" };

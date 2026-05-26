@@ -9,6 +9,8 @@ body {
   padding: 24px;
 }
 #game canvas { display: block; border-radius: 8px; cursor: none; }
+#game.pan-ready canvas { cursor: grab; }
+#game.panning canvas { cursor: grabbing; }
 
 .overlay {
   position: fixed;

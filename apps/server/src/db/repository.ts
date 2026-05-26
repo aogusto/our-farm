@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "./client";
-import { users, farms, crops } from "./schema";
+import { users, farms, crops, farmPlots } from "./schema";
 import { normalizeHandStyle } from "@our-farm/shared";
-import type { Crop, CropType, Farm, HandStyle, User } from "@our-farm/shared";
+import type { Crop, CropType, Farm, HandStyle, Plot, User } from "@our-farm/shared";
 
 function rowToUser(row: typeof users.$inferSelect): User {
   return {
@@ -88,4 +88,44 @@ export async function deleteCropAt(farmId: string, x: number, y: number): Promis
     .where(and(eq(crops.farmId, farmId), eq(crops.x, x), eq(crops.y, y)))
     .returning({ id: crops.id });
   return deleted.length > 0;
+}
+
+function rowToPlot(row: typeof farmPlots.$inferSelect): Plot {
+  return {
+    farmId: row.farmId,
+    x: row.x,
+    y: row.y,
+    unlockedAt: row.unlockedAt.getTime(),
+  };
+}
+
+export async function getFarmPlots(farmId: string): Promise<Plot[]> {
+  const rows = await db.select().from(farmPlots).where(eq(farmPlots.farmId, farmId));
+  return rows.map(rowToPlot);
+}
+
+export async function insertPlot(input: {
+  farmId: string;
+  x: number;
+  y: number;
+  unlockedAt?: number;
+}): Promise<Plot> {
+  const inserted = await db.insert(farmPlots).values({
+    farmId: input.farmId,
+    x: input.x,
+    y: input.y,
+    unlockedAt: new Date(input.unlockedAt ?? Date.now()),
+  }).onConflictDoNothing().returning();
+
+  if (inserted.length > 0 && inserted[0]) {
+    return rowToPlot(inserted[0]);
+  }
+  // Conflito (já existia): retorna a linha existente.
+  const [existing] = await db.select().from(farmPlots).where(and(
+    eq(farmPlots.farmId, input.farmId),
+    eq(farmPlots.x, input.x),
+    eq(farmPlots.y, input.y),
+  ));
+  if (!existing) throw new Error("insertPlot: insert returned no row and no existing row found");
+  return rowToPlot(existing);
 }

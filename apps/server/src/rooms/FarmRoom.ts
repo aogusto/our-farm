@@ -1,8 +1,8 @@
 import { Room, type Client } from "colyseus";
 import type { User, CursorMessage, PlantMessage, HarvestMessage, CropType } from "@our-farm/shared";
 import { validatePlant, validateHarvest } from "@our-farm/shared";
-import { FarmState, Cursor, CropState, tileKey } from "./schema";
-import { getSharedFarm, getFarmCrops, getUserByToken, insertCrop, deleteCropAt } from "../db/repository";
+import { FarmState, Cursor, CropState, PlotState, tileKey } from "./schema";
+import { getSharedFarm, getFarmCrops, getFarmPlots, getUserByToken, insertCrop, deleteCropAt } from "../db/repository";
 
 export class FarmRoom extends Room<FarmState> {
   async onCreate(): Promise<void> {
@@ -21,6 +21,13 @@ export class FarmRoom extends Room<FarmState> {
       cropState.plantedAt = crop.plantedAt;
       cropState.plantedBy = crop.plantedBy;
       state.crops.set(tileKey(crop.x, crop.y), cropState);
+    }
+
+    const plots = await getFarmPlots(farm.id);
+    for (const p of plots) {
+      const ps = new PlotState();
+      ps.unlockedAt = p.unlockedAt;
+      state.plots.set(tileKey(p.x, p.y), ps);
     }
     this.setState(state);
 
@@ -79,6 +86,7 @@ export class FarmRoom extends Room<FarmState> {
       y: message.y,
       cropType: message.cropType,
       occupied: this.state.crops.has(key),
+      unlocked: this.state.plots.has(key),
       gridWidth: this.state.gridWidth,
       gridHeight: this.state.gridHeight,
     });

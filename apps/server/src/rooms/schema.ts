@@ -15,13 +15,18 @@ export class CropState extends Schema {
   @type("string") plantedBy = "";
 }
 
+export class PlotState extends Schema {
+  @type("number") unlockedAt = 0;
+}
+
 export class FarmState extends Schema {
   @type("string") farmId = "";
   @type("number") gridWidth = 16;
   @type("number") gridHeight = 16;
   @type({ map: Cursor }) cursors = new MapSchema<Cursor>();
   @type({ map: CropState }) crops = new MapSchema<CropState>();
+  @type({ map: PlotState }) plots = new MapSchema<PlotState>();
 }
 
-/** Chave usada no MapSchema `crops`. */
+/** Chave usada nos MapSchema `crops` e `plots`. */
 export const tileKey = (x: number, y: number): string => `${x},${y}`;

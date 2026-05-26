@@ -4,25 +4,22 @@ import { ensureIdentity } from "./identity";
 import { connectToFarm } from "./net/room";
 import { createHud } from "./ui/hud";
 import { FarmScene, type FarmSceneData } from "./game/FarmScene";
-import { TILE } from "./game/constants";
+import { VIEWPORT } from "./game/constants";
 
 async function main(): Promise<void> {
   const { token } = await ensureIdentity();
   const room = await connectToFarm(token);
   const hud = createHud();
 
-  const cols = room.state.gridWidth;
-  const rows = room.state.gridHeight;
-
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: "game",
-    width: cols * TILE,
-    height: rows * TILE,
-    backgroundColor: "#2f3a1f",
+    width: VIEWPORT.width,
+    height: VIEWPORT.height,
+    backgroundColor: "#1f2515",
   });
 
-  game.scene.add("farm", FarmScene, true, { room, hud, cols, rows } satisfies FarmSceneData);
+  game.scene.add("farm", FarmScene, true, { room, hud } satisfies FarmSceneData);
 }
 
 void main();
