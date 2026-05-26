@@ -10,7 +10,19 @@ ao vivo + loop plantar → crescer → colher.
   I/O). Toda regra de jogo mora aqui.
 - `apps/server` — Colyseus (cada fazenda = uma Room) + rotas HTTP de identidade
   + Postgres via Drizzle. Schema e migrations em `apps/server/drizzle`.
-- `apps/web` — Vite + Phaser 3 + cliente Colyseus.
+- `apps/web` — Vite + Phaser 4 + cliente Colyseus.
+
+## Primeiro setup (clone novo)
+
+```bash
+nvm use 20              # ou nvm install 20 se ainda não tiver
+pnpm install            # instala todas as workspaces
+cp .env.example .env    # DATABASE_URL + PORT (gitignored)
+docker compose up -d    # sobe o Postgres 16 local
+pnpm db:migrate         # aplica o schema no banco
+pnpm db:seed            # cria a fazenda compartilhada (idempotente)
+pnpm dev                # web em :5173, server em :2567
+```
 
 ## Comandos
 
