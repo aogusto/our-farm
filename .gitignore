@@ -7,3 +7,4 @@ dist/
 playwright-report/
 playwright/.cache/
 test-results/
+.superpowers/
