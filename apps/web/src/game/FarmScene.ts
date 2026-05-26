@@ -56,11 +56,11 @@ export class FarmScene extends Phaser.Scene {
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
         const checker = (x + y) % 2 === 0;
-        g.fillStyle(checker ? COLORS.soil : COLORS.soilAlt, 1);
+        g.fillStyle(checker ? COLORS.soil : COLORS.grassAlt, 1);
         g.fillRect(x * TILE, y * TILE, TILE, TILE);
       }
     }
-    g.lineStyle(1, COLORS.grid, 0.5);
+    g.lineStyle(1, COLORS.soilStroke, 0.5);
     for (let x = 0; x <= this.cols; x++) {
       g.lineBetween(x * TILE, 0, x * TILE, this.rows * TILE);
     }
