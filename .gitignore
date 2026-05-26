@@ -4,3 +4,6 @@ dist/
 .env
 *.log
 .worktrees/
+playwright-report/
+playwright/.cache/
+test-results/
