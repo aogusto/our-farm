@@ -3,7 +3,8 @@ import { ColyseusTestServer, boot } from "@colyseus/testing";
 import appConfig from "../app.config";
 import { queryClient } from "../db/client";
 import { resetDb, seedSharedFarm, makeUser } from "../test/db-helpers";
-import { getFarmCrops } from "../db/repository";
+import { getFarmCrops, insertCrop } from "../db/repository";
+import { CROP_CATALOG } from "@our-farm/shared";
 
 describe("FarmRoom", () => {
   let colyseus: ColyseusTestServer;
@@ -61,7 +62,7 @@ describe("FarmRoom — plant", () => {
   let colyseus: ColyseusTestServer;
 
   beforeAll(async () => { colyseus = await boot(appConfig); });
-  afterAll(async () => { await colyseus.shutdown(); await queryClient.end(); });
+  afterAll(async () => { await colyseus.shutdown(); });
   beforeEach(async () => { await colyseus.cleanup(); await resetDb(); });
 
   it("planta numa terra vazia e persiste no banco", async () => {
@@ -107,6 +108,58 @@ describe("FarmRoom — plant", () => {
     const room = await colyseus.createRoom("farm", {});
     const client = await colyseus.connectTo(room, { token: user.token });
     client.send("plant", { x: 2, y: 2, cropType: "banana" });
+    await room.waitForNextPatch();
+
+    expect(room.state.crops.size).toBe(0);
+  });
+});
+
+describe("FarmRoom — harvest", () => {
+  let colyseus: ColyseusTestServer;
+
+  beforeAll(async () => { colyseus = await boot(appConfig); });
+  afterAll(async () => { await colyseus.shutdown(); await queryClient.end(); });
+  beforeEach(async () => { await colyseus.cleanup(); await resetDb(); });
+
+  it("colhe uma cultura pronta e remove do banco", async () => {
+    const farm = await seedSharedFarm();
+    const user = await makeUser();
+    // cultura plantada bem no passado → já pronta
+    await insertCrop({
+      farmId: farm.id, x: 2, y: 2, cropType: "carrot", plantedBy: user.id,
+      plantedAt: Date.now() - CROP_CATALOG.carrot.growthMs - 5000,
+    });
+    const room = await colyseus.createRoom("farm", {});
+    const client = await colyseus.connectTo(room, { token: user.token });
+    client.send("harvest", { x: 2, y: 2 });
+    await room.waitForNextPatch();
+
+    expect(room.state.crops.has("2,2")).toBe(false);
+    expect(await getFarmCrops(farm.id)).toHaveLength(0);
+  });
+
+  it("rejeita colher cultura que ainda não cresceu", async () => {
+    const farm = await seedSharedFarm();
+    const user = await makeUser();
+    await insertCrop({
+      farmId: farm.id, x: 4, y: 4, cropType: "corn", plantedBy: user.id,
+      plantedAt: Date.now(), // recém-plantada
+    });
+    const room = await colyseus.createRoom("farm", {});
+    const client = await colyseus.connectTo(room, { token: user.token });
+    client.send("harvest", { x: 4, y: 4 });
+    await room.waitForNextPatch();
+
+    expect(room.state.crops.has("4,4")).toBe(true);
+    expect(await getFarmCrops(farm.id)).toHaveLength(1);
+  });
+
+  it("ignora colheita em terra vazia", async () => {
+    await seedSharedFarm();
+    const user = await makeUser();
+    const room = await colyseus.createRoom("farm", {});
+    const client = await colyseus.connectTo(room, { token: user.token });
+    client.send("harvest", { x: 7, y: 7 });
     await room.waitForNextPatch();
 
     expect(room.state.crops.size).toBe(0);

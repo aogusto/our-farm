@@ -1,8 +1,8 @@
 import { Room, type Client } from "colyseus";
-import type { User, CursorMessage, PlantMessage } from "@our-farm/shared";
-import { validatePlant } from "@our-farm/shared";
+import type { User, CursorMessage, PlantMessage, HarvestMessage, CropType } from "@our-farm/shared";
+import { validatePlant, validateHarvest } from "@our-farm/shared";
 import { FarmState, Cursor, CropState, tileKey } from "./schema";
-import { getSharedFarm, getFarmCrops, getUserByToken, insertCrop } from "../db/repository";
+import { getSharedFarm, getFarmCrops, getUserByToken, insertCrop, deleteCropAt } from "../db/repository";
 
 export class FarmRoom extends Room<{ state: FarmState }> {
   async onCreate(): Promise<void> {
@@ -31,6 +31,12 @@ export class FarmRoom extends Room<{ state: FarmState }> {
     this.onMessage("plant", (client, message: PlantMessage) => {
       this.handlePlant(client, message).catch((err) => {
         console.error("[FarmRoom] handlePlant error", err);
+      });
+    });
+
+    this.onMessage("harvest", (client, message: HarvestMessage) => {
+      this.handleHarvest(client, message).catch((err) => {
+        console.error("[FarmRoom] handleHarvest error", err);
       });
     });
   }
@@ -98,5 +104,27 @@ export class FarmRoom extends Room<{ state: FarmState }> {
     cropState.plantedAt = crop.plantedAt;
     cropState.plantedBy = crop.plantedBy;
     this.state.crops.set(key, cropState);
+  }
+
+  private async handleHarvest(client: Client, message: HarvestMessage): Promise<void> {
+    const user = client.auth as User | undefined;
+    if (!user) return;
+    if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
+
+    const key = tileKey(message.x, message.y);
+    const crop = this.state.crops.get(key);
+
+    const result = validateHarvest({
+      cropType: crop ? (crop.cropType as CropType) : null,
+      plantedAt: crop ? crop.plantedAt : null,
+      now: Date.now(),
+    });
+    if (!result.ok) return;
+
+    // Persiste primeiro; só reflete no estado se o banco confirmar.
+    const removed = await deleteCropAt(this.state.farmId, message.x, message.y);
+    if (removed) {
+      this.state.crops.delete(key);
+    }
   }
 }
