@@ -44,6 +44,7 @@ export async function createUser(input: { nickname: string; handStyle: HandStyle
     handStyle: input.handStyle,
     token: randomUUID(),
   }).returning();
+  if (!row) throw new Error("createUser: insert returned no row");
   return rowToUser(row);
 }
 
@@ -78,6 +79,7 @@ export async function insertCrop(input: {
     plantedBy: input.plantedBy,
     plantedAt: new Date(input.plantedAt ?? Date.now()),
   }).returning();
+  if (!row) throw new Error("insertCrop: insert returned no row");
   return rowToCrop(row);
 }
 
