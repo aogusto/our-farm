@@ -1,0 +1,130 @@
+import { Room, type Client } from "colyseus";
+import type { User, CursorMessage, PlantMessage, HarvestMessage, CropType } from "@our-farm/shared";
+import { validatePlant, validateHarvest } from "@our-farm/shared";
+import { FarmState, Cursor, CropState, tileKey } from "./schema";
+import { getSharedFarm, getFarmCrops, getUserByToken, insertCrop, deleteCropAt } from "../db/repository";
+
+export class FarmRoom extends Room<FarmState> {
+  async onCreate(): Promise<void> {
+    const farm = await getSharedFarm();
+    if (!farm) throw new Error("fazenda compartilhada não foi semeada (rode pnpm db:seed)");
+
+    const state = new FarmState();
+    state.farmId = farm.id;
+    state.gridWidth = farm.gridWidth;
+    state.gridHeight = farm.gridHeight;
+
+    const crops = await getFarmCrops(farm.id);
+    for (const crop of crops) {
+      const cropState = new CropState();
+      cropState.cropType = crop.cropType;
+      cropState.plantedAt = crop.plantedAt;
+      cropState.plantedBy = crop.plantedBy;
+      state.crops.set(tileKey(crop.x, crop.y), cropState);
+    }
+    this.setState(state);
+
+    this.onMessage("cursor", (client, message: CursorMessage) => {
+      this.handleCursor(client, message);
+    });
+
+    this.onMessage("plant", (client, message: PlantMessage) => {
+      this.handlePlant(client, message).catch((err) => {
+        console.error("[FarmRoom] handlePlant error", err);
+      });
+    });
+
+    this.onMessage("harvest", (client, message: HarvestMessage) => {
+      this.handleHarvest(client, message).catch((err) => {
+        console.error("[FarmRoom] handleHarvest error", err);
+      });
+    });
+  }
+
+  async onAuth(_client: Client, options: { token?: string }): Promise<User> {
+    const user = options.token ? await getUserByToken(options.token) : null;
+    if (!user) throw new Error("token inválido");
+    return user;
+  }
+
+  onJoin(client: Client, _options: unknown, user: User): void {
+    const cursor = new Cursor();
+    cursor.userId = user.id;
+    cursor.nickname = user.nickname;
+    cursor.handColor = user.handStyle.color;
+    cursor.handShape = user.handStyle.shape;
+    this.state.cursors.set(client.sessionId, cursor);
+  }
+
+  onLeave(client: Client): void {
+    this.state.cursors.delete(client.sessionId);
+  }
+
+  private handleCursor(client: Client, message: CursorMessage): void {
+    const cursor = this.state.cursors.get(client.sessionId);
+    if (!cursor) return;
+    if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
+    cursor.x = message.x;
+    cursor.y = message.y;
+  }
+
+  private async handlePlant(client: Client, message: PlantMessage): Promise<void> {
+    const user = client.auth as User | undefined;
+    if (!user) return;
+    if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
+
+    const key = tileKey(message.x, message.y);
+    const result = validatePlant({
+      x: message.x,
+      y: message.y,
+      cropType: message.cropType,
+      occupied: this.state.crops.has(key),
+      gridWidth: this.state.gridWidth,
+      gridHeight: this.state.gridHeight,
+    });
+    if (!result.ok) return;
+
+    // Persiste primeiro; só reflete no estado da Room se o banco confirmar.
+    const crop = await insertCrop({
+      farmId: this.state.farmId,
+      x: message.x,
+      y: message.y,
+      cropType: result.cropType,
+      plantedBy: user.id,
+    });
+
+    // Re-check após o await: outro plant pode ter chegado na mesma tile enquanto
+    // este estava aguardando a persistência. Se isso aconteceu, abandona — o
+    // estado já tem o vencedor da corrida, e a constraint UNIQUE manteve o banco
+    // consistente (o outro insert teria falhado).
+    if (this.state.crops.has(key)) return;
+
+    const cropState = new CropState();
+    cropState.cropType = crop.cropType;
+    cropState.plantedAt = crop.plantedAt;
+    cropState.plantedBy = crop.plantedBy;
+    this.state.crops.set(key, cropState);
+  }
+
+  private async handleHarvest(client: Client, message: HarvestMessage): Promise<void> {
+    const user = client.auth as User | undefined;
+    if (!user) return;
+    if (typeof message?.x !== "number" || typeof message?.y !== "number") return;
+
+    const key = tileKey(message.x, message.y);
+    const crop = this.state.crops.get(key);
+
+    const result = validateHarvest({
+      cropType: crop ? (crop.cropType as CropType) : null,
+      plantedAt: crop ? crop.plantedAt : null,
+      now: Date.now(),
+    });
+    if (!result.ok) return;
+
+    // Persiste primeiro; só reflete no estado se o banco confirmar.
+    const removed = await deleteCropAt(this.state.farmId, message.x, message.y);
+    if (removed) {
+      this.state.crops.delete(key);
+    }
+  }
+}
