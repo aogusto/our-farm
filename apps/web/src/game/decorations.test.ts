@@ -69,4 +69,20 @@ describe("generateDecorations", () => {
       expect(["tree", "rock"]).toContain(d.kind);
     }
   });
+
+  it("é estável quando o conjunto de unlocked muda (decorações fora não se mexem)", () => {
+    const allOpen = generateDecorations({ farmId: FARM_ID, ...GRID, unlockedTiles: new Set() });
+    const withUnlocked = generateDecorations({
+      farmId: FARM_ID,
+      ...GRID,
+      unlockedTiles: new Set(["10,10", "10,11"]),
+    });
+    // Toda decoração que existe em ambos os runs (i.e., em tile não-unlocked
+    // no segundo run) deve estar na mesma posição que no primeiro run.
+    for (const d of withUnlocked) {
+      const matching = allOpen.find((a) => a.x === d.x && a.y === d.y);
+      expect(matching).toBeDefined();
+      expect(matching?.kind).toBe(d.kind);
+    }
+  });
 });

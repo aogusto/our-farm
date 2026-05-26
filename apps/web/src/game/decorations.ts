@@ -26,10 +26,11 @@ export function generateDecorations(input: GenerateDecorationsInput): Decoration
   const out: Decoration[] = [];
   for (let y = 0; y < input.gridHeight; y++) {
     for (let x = 0; x < input.gridWidth; x++) {
-      if (input.unlockedTiles.has(`${x},${y}`)) continue;
-      // Consumimos UM número do RNG por tile, mesmo quando não cabe decoração,
-      // pra garantir reprodutibilidade independente do conjunto de unlocks.
+      // Consumimos UM número do RNG por tile, mesmo nos tiles desbloqueados ou
+      // sem decoração, pra que o output seja estável quando o conjunto de
+      // unlocked tiles mudar (ex: jogador desbloqueando um lote novo).
       const roll = rng();
+      if (input.unlockedTiles.has(`${x},${y}`)) continue;
       if (roll >= density) continue;
       const kindRoll = rng();
       out.push({ kind: kindRoll < 0.7 ? "tree" : "rock", x, y });
