@@ -1,10 +1,6 @@
 import { Client, type Room } from "colyseus.js";
 import { SERVER_WS } from "../config";
 
-/**
- * Forma do estado da Room espelhada pelo colyseus.js. Os MapSchema expõem
- * `.forEach`, `.get`, `.has` e `.size`, exatamente como no servidor.
- */
 export interface CursorView {
   userId: string;
   nickname: string;
@@ -17,6 +13,9 @@ export interface CropView {
   cropType: string;
   plantedAt: number;
   plantedBy: string;
+}
+export interface PlotView {
+  unlockedAt: number;
 }
 export interface FarmStateView {
   farmId: string;
@@ -33,6 +32,12 @@ export interface FarmStateView {
     has(key: string): boolean;
     size: number;
   };
+  plots: {
+    forEach(cb: (value: PlotView, key: string) => void): void;
+    get(key: string): PlotView | undefined;
+    has(key: string): boolean;
+    size: number;
+  };
 }
 
 export type FarmRoom = Room<FarmStateView>;
@@ -40,7 +45,7 @@ export type FarmRoom = Room<FarmStateView>;
 /**
  * Conecta no servidor, entra na Room da fazenda compartilhada e só resolve
  * depois que o primeiro snapshot de estado chegou — assim quem chama já lê
- * `gridWidth`/`crops` populados.
+ * `gridWidth`/`crops`/`plots` populados.
  */
 export async function connectToFarm(token: string): Promise<FarmRoom> {
   const client = new Client(SERVER_WS);
